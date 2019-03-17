@@ -1,67 +1,46 @@
 import random
 
-
-
-
 class Perceptron:
-    def __init__(self, input_layer, weights=None, bias=7):
-        # Инициализация весов сети
+    def __init__(self, input_layer, weights=None, bias=0, learining_rate=0.01):
         if weights is None:
-            self.weights = [0 for i in range(15)]
+            self.weights = [random.random() * 2 - 1 for _ in range(len(input_layer))]
         else: 
             self.weights = weights
 
-        # Порог функции активации(вот вообще любой, но от настроения берем 7)
         self.bias = bias
         self.input = input_layer
+        self.learning_rate = learining_rate
+        self.size = len(self.input)
 
 
-    # Является ли данное число 5 ? мы это проверяем
     def proceed(self, number):
-        # Рассчитываем взвешенную сумму (подсуммируем сумму , которая будет являться инпутами, умноженными на веса)
-        net = 0
-        for i in range(15):
-            net += int(number[i]) * self.weights[i]
-    
-        # Превышен ли порог? (Да - сеть думает, что это 5. Нет - сеть думает, что это другая цифра)
-        return net >= self.bias # по сути return 1 или 0
+        net = sum([int(number[i]) * self.weights[i] \
+            for i in range(self.size)])
+
+        return 1 if net >= self.bias else -1 
 
 
-    #Делаем еще 2 вспомогательные функции
-    # Уменьшение значений весов, если сеть ошиблась и выдала 1
-    def decrease(self, number):
-        for i in range(15):
-            # Возбужденный ли вход
-            if int(number[i]) == 1: # преобразование ,так как самому перцептону мы подаем в строковом виде
-                # Уменьшаем связанный с ним вес на единицу (вообще ,не обязательно на 1, мы это делаем в зависимости от настроения, ничего не мешает взять нам 0.2, но мы берем 1)
-                self.weights[i] -= 1
+    def update_weights(self, data, iter_error): # FIXME что должно быть в data?
+        self.weights = \
+            [i + self.learning_rate * iter_error * data for i in self.weights]
 
 
-    # Увеличение значений весов, если сеть ошиблась и выдала 0
-    def increase(self, number):
-        for i in range(15):
-            # Возбужденный ли вход
-            if int(number[i]) == 1: #насчет приведения ты тоже , должно быть, помнишь)
-                # Увеличиваем связанный с ним вес на единицу(ну ты помнишь)
-                self.weights[i] += 1
-
-
-    def train(self, times=10000):
-        # Тренировка сети
-        for i in range(times): # решая обучать, мы 1к раз пробегаемся циклом по выполняемым функциям
-            # Генерируем случайное число от 0 до 9
+    def train(self, max_iter=100):
+        learned = False
+        iterations = 0
+        while not learned: 
+            global_error = 0
             option = random.randint(0, 9)
-        
-            # Если получилось НЕ число 5
-            if option != 5:
-                # Если сеть выдала True/Да/1, то это заслуживает наказания(так как не 5, но она распознала его , как 5)
-                if self.proceed(self.input[option]):
-                    self.decrease(self.input[option])
-            # Если получилось число 5
-            else:
-                # Если сеть выдала False/Нет/0, то показываем, что эта цифра - то, что нам нужно, и увеличиваем значение веса. Наше поощрение, так сказать
-                if not self.proceed(num5):
-                    self.increase(num5)
+            response = self.proceed(self.input[option])
+
+            if response != option:
+                iter_error = -1 # FIXME
+                self.update_weights(option, iter_error)
+                global_error += abs(iter_error)
+            iterations += 1
+            if global_error == 0.0 or iterations >= max_iter:
+                print(f'iterations: {iterations}')
+                learned = True
 
 
 if __name__ == "__main__":
